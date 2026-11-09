@@ -86,12 +86,13 @@ When Google is connected, employee accounts require an email address. Existing a
 
 1. Initialize a private GitHub repository and push only source files; verify `.gitignore` excludes `.venv/`, `cathea.db`, `instance/`, `static/uploads/`, `.env` files, and bytecode.
 2. Create a Railway service from GitHub, attach a persistent volume at `/data`, and set `DATABASE_URL=sqlite:////data/cathea.db`, `MEDIA_STORAGE_DIR=/data/uploads`, and `MEDIA_STAGING_DIR=/data/media-upload-staging`.
-3. Add a strong Railway `SECRET_KEY`; set the optional Google Calendar variables only when OAuth is configured. Set Railway's health check path to `/healthz`.
-4. Back up the local database, copy `cathea.db` and `static/uploads/` to the Railway volume while writes are stopped, and verify homepage, Photos, Cinema, portal login, gallery/video management, and one real upload.
-5. Change the seeded local administrator password immediately after migration and rotate production secrets before public launch.
-6. Verify the hosting proxy request-size limit is at least the configured `MEDIA_UPLOAD_CHUNK_SIZE`, then test uploads/imports with real media on the deployed instance, including survival across a restart if required.
-7. Confirm deployed gallery uploads auto-start for file, folder, and drag/drop selection, and the published-gallery dialog is centered on desktop and mobile.
-8. Add a real Google Drive video with General access set to **Anyone with the link**, then verify playback on Cinema and as the homepage hero.
-9. Configure the Google Cloud OAuth client and environment secrets on the deployment.
-10. Verify the displayed Calendar callback URI matches the registered URI exactly, connect the calendar as an administrator, and test a small event with consenting recipients.
-11. Confirm the chosen `GOOGLE_CALENDAR_ID` is writable by the connected Google account.
+3. Add GitHub Actions repository secrets `RAILWAY_TOKEN`, `RAILWAY_PROJECT_ID`, and `RAILWAY_SERVICE_ID`; the workflow in `.github/workflows/deploy-railway.yml` deploys `main` with Railway CLI.
+4. Add a strong Railway `SECRET_KEY`; set the optional Google Calendar variables only when OAuth is configured. Set Railway's health check path to `/healthz`.
+5. Back up the local database, copy `cathea.db` and `static/uploads/` to the Railway volume while writes are stopped, and verify homepage, Photos, Cinema, portal login, gallery/video management, and one real upload.
+6. Change the seeded local administrator password immediately after migration and rotate production secrets before public launch.
+7. Verify the hosting proxy request-size limit is at least the configured `MEDIA_UPLOAD_CHUNK_SIZE`, then test uploads/imports with real media on the deployed instance, including survival across a restart if required.
+8. Confirm deployed gallery uploads auto-start for file, folder, and drag/drop selection, and the published-gallery dialog is centered on desktop and mobile.
+9. Add a real Google Drive video with General access set to **Anyone with the link**, then verify playback on Cinema and as the homepage hero.
+10. Configure the Google Cloud OAuth client and environment secrets on the deployment.
+11. Verify the displayed Calendar callback URI matches the registered URI exactly, connect the calendar as an administrator, and test a small event with consenting recipients.
+12. Confirm the chosen `GOOGLE_CALENDAR_ID` is writable by the connected Google account.

@@ -867,6 +867,11 @@ def move_portal_to_configured_host():
 # PUBLIC FRONTEND ROUTES (WHITE / MINIMALIST)
 # ==========================================
 
+@app.route('/healthz')
+def healthz():
+    return jsonify(status='ok')
+
+
 @app.route('/')
 def index():
     galleries = Gallery.query.filter_by(is_active=True).order_by(Gallery.sort_order.asc()).all()

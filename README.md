@@ -81,6 +81,18 @@ web: gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 app:app
 5. Set Railway's health check path to `/healthz`, deploy, and open the generated Railway domain. The public site is `/`; the portal is `/portal/login`.
 6. Change the seeded local administrator password immediately after the first successful login. The current seed password is intended only for local development and must not be used as a production credential.
 
+### Optional GitHub Actions deployment
+
+The repository includes `.github/workflows/deploy-railway.yml`. It deploys `main` to Railway after each push and can also be started manually from the **Actions** tab. In the GitHub repository settings, add these **Repository secrets**:
+
+```text
+RAILWAY_TOKEN       # Railway project/service deployment token
+RAILWAY_PROJECT_ID  # Railway project ID
+RAILWAY_SERVICE_ID  # Railway web service ID
+```
+
+The workflow installs Railway's official CLI and runs `railway up --ci`. Configure the Railway volume and variables in the Railway service before the first workflow run. GitHub Actions secrets are only for deployment access; application variables such as `SECRET_KEY` and `DATABASE_URL` belong in Railway's service Variables.
+
 ### Migrating the current site
 
 Do not put the current database or media in GitHub. Back up `cathea.db` first, then copy it and the contents of `static/uploads/` to the mounted Railway volume as `/data/cathea.db` and `/data/uploads/`. Copy `instance/media-upload-staging/` to `/data/media-upload-staging/` only if interrupted uploads need to survive the migration. Stop writes during the copy, or take a consistent SQLite backup, to avoid copying a partially written database.
