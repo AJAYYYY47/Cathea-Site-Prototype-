@@ -23,7 +23,7 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from requests.exceptions import RequestException
-from werkzeug.utils import secure_filename, safe_join
+from werkzeug.utils import secure_filename
 
 from config import Config
 from models import (
@@ -155,20 +155,14 @@ def generate_image_thumbnail_url(url):
             return source_url
         if filename.lower().startswith('thumb_'):
             return source_url
-        if filename != secure_filename(filename):
-            return source_url
 
-        upload_source_path = safe_join(app.config['UPLOAD_FOLDER'], filename)
-        if not upload_source_path:
-            return source_url
+        upload_source_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         if not os.path.isfile(upload_source_path):
             return source_url
 
         stem = Path(filename).stem
         thumb_filename = f'thumb_{stem}.jpg'
-        thumb_disk_path = safe_join(app.config['UPLOAD_FOLDER'], thumb_filename)
-        if not thumb_disk_path:
-            return source_url
+        thumb_disk_path = os.path.join(app.config['UPLOAD_FOLDER'], thumb_filename)
         thumb_url = f'/uploads/{thumb_filename}'
 
         if not os.path.isfile(thumb_disk_path):
@@ -189,7 +183,7 @@ def generate_image_thumbnail_url(url):
         return thumb_url
 
     host = (parsed_source.hostname or '').lower()
-    if host == 'images.unsplash.com':
+    if host.endswith('images.unsplash.com'):
         query_params = parse_qs(parsed_source.query, keep_blank_values=True)
         query_params['auto'] = ['format']
         query_params['fit'] = ['crop']
