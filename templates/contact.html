@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Inquiries — {{ settings.site_title if settings else 'CATHEA' }}{% endblock %}
+
+{% block content %}
+<div class="page-title-bar">
+  <h1 class="page-title">Inquiries</h1>
+  <span class="page-index">CONSULTATION</span>
+</div>
+
+<div class="inquiry-grid-minimal">
+  
+  <!-- Left Column: Direct Links & Leads -->
+  <div class="inquiry-col">
+    <h2>Initiate Consultation</h2>
+    
+    <div class="inquiry-contact-links">
+      <div class="inquiry-contact-item">
+        <span>Portfolio & Updates</span>
+        <a href="https://www.instagram.com/{{ settings.instagram_handle if settings else 'cathea.studio' }}/" target="_blank">
+          @cathea.studio
+        </a>
+      </div>
+
+      <div class="inquiry-contact-item">
+        <span>WhatsApp Direct Consultation</span>
+        <a href="https://wa.me/{{ settings.whatsapp_number if settings else '6281234567890' }}?text=Hello%20Cathea%20Studio%2C%20I%20would%20like%20to%20consult%20regarding%20a%20wedding%20or%20prewedding%20session." target="_blank">
+          +{{ settings.whatsapp_number if settings else '6281234567890' }}
+        </a>
+      </div>
+
+      <div class="inquiry-contact-item">
+        <span>Atelier Locations</span>
+        <div style="font-family: var(--font-serif); font-size: 1.15rem; color: #000; margin-top: 0.3rem;">
+          Batam &bull; Singapore &bull; Worldwide
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Line-only Consultation Form -->
+  <div class="inquiry-col">
+    <form action="{{ url_for('submit_inquiry') }}" method="POST" class="inquiry-form-minimal">
+      <div class="form-field">
+        <label>Your Name</label>
+        <input type="text" name="name" class="form-input" required placeholder="Full Name">
+      </div>
+
+      <div class="form-field">
+        <label>Email Address</label>
+        <input type="email" name="email" class="form-input" required placeholder="name@domain.com">
+      </div>
+
+      <div class="form-field">
+        <label>WhatsApp / Phone</label>
+        <input type="text" name="phone" class="form-input" placeholder="+62 / +65 ...">
+      </div>
+
+      <div class="form-field">
+        <label>Subject</label>
+        <select name="service_type" class="form-input" style="background: transparent;">
+          <option value="Wedding Day">Wedding Day</option>
+          <option value="Prewedding / Engagement">Prewedding / Engagement</option>
+          <option value="Studio Portraiture">Studio Portraiture</option>
+          <option value="Commercial / Cinema">Commercial / Cinema</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label>Details & Date</label>
+        <textarea name="message" class="form-input" rows="3" required placeholder="Event location, date, and vision..."></textarea>
+      </div>
+
+      <button type="submit" class="btn-submit-minimal">
+        Send Inquiry &rarr;
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

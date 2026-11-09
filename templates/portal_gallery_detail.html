@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ gallery.title }} — Cathea Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/portal.css') }}?v=22">
+</head>
+<body class="portal-body gallery-manager-body">
+  {% set active_portal_page = 'galleries' %}
+  {% include 'portal_sidebar.html' %}
+
+  <main class="portal-main gallery-manager-main gallery-detail-main">
+    <div class="portal-topbar gallery-manager-page-header">
+      <div>
+        <h2>{% if step == 2 %}Upload &amp; sections{% else %}Stylize &amp; publish{% endif %}</h2>
+        <p>{{ gallery.title }}</p>
+      </div>
+      {% if step == 2 %}
+        <a class="btn-submit-minimal" href="{{ url_for('portal_gallery_detail', gallery_id=gallery.id, step=3) }}">Next: stylize &amp; publish <span aria-hidden="true">&rarr;</span></a>
+      {% else %}
+        <button class="btn-submit-minimal" type="submit" form="gallery-publish-form" {% if not photos %}disabled{% endif %}>Save &amp; publish <span aria-hidden="true">&rarr;</span></button>
+      {% endif %}
+    </div>
+
+    <div class="gallery-workflow-topline">
+      {% if step == 2 %}
+        <button class="gallery-small-button" type="button" data-open-gallery-details><i class="fas fa-pen" aria-hidden="true"></i> Edit details</button>
+        <a href="{{ url_for('portal_galleries') }}">← All galleries</a>
+      {% else %}
+        <a href="{{ url_for('portal_gallery_detail', gallery_id=gallery.id, step=2) }}">← Back to uploads</a>
+        <span>{{ photos|length }} photos</span>
+      {% endif %}
+    </div>
+
+    <nav class="gallery-workflow-steps" aria-label="Gallery workflow">
+      <span class="complete"><b>01</b> Details</span>
+      <a class="{% if step == 2 %}active{% else %}complete{% endif %}" href="{{ url_for('portal_gallery_detail', gallery_id=gallery.id, step=2) }}"><b>02</b> Upload &amp; sections</a>
+      <a class="{% if step == 3 %}active{% endif %}" href="{{ url_for('portal_gallery_detail', gallery_id=gallery.id, step=3) }}"><b>03</b> Stylize &amp; publish</a>
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="manager-flashes">
+          {% for category, message in messages %}
+            <p class="manager-flash {{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if step == 2 %}
+      <section class="gallery-sections-panel">
+        <div class="gallery-sections-heading">
+          <div>
+            <p class="manager-eyebrow">Step 2 of 3</p>
+            <h1>Upload photos and organize sections</h1>
+          </div>
+          <form action="{{ url_for('portal_create_gallery_section', gallery_id=gallery.id) }}" method="POST" class="add-section-form">
+            <input class="form-control" name="title" required maxlength="180" placeholder="New section name" aria-label="New section name">
+            <button type="submit" aria-label="Add section"><i class="fas fa-plus"></i></button>
+          </form>
+        </div>
+
+        <nav class="gallery-section-tabs" aria-label="Photo sections">
+          {% for section in sections %}
+            <div class="gallery-section-item {% if active_section and section.id == active_section.id %}active{% endif %}">
+              <a href="{{ url_for('portal_gallery_detail', gallery_id=gallery.id, section=section.id, step=2) }}" aria-label="Open {{ section.title }}">
+                <span data-section-label>{{ section.title }}</span>
+                <small>{{ section.items|selectattr('media_type', 'equalto', 'image')|list|length }}</small>
+              </a>
+              <form class="section-inline-rename" action="{{ url_for('portal_update_gallery_section', gallery_id=gallery.id, section_id=section.id) }}" method="POST" hidden>
+                <input class="form-control" name="title" value="{{ section.title }}" required maxlength="180" aria-label="Rename section">
+                <button type="submit" aria-label="Save section name"><i class="fas fa-check"></i></button>
+              </form>
+              {% if sections|length > 1 %}
+                {% set destination = (sections|rejectattr('id', 'equalto', section.id)|first) %}
+                <form action="{{ url_for('portal_delete_gallery_section', gallery_id=gallery.id, section_id=section.id) }}" method="POST"
+                      data-confirm-delete data-confirm-message="Remove this section? Its photos will move to {{ destination.title }}.">
+                  <button class="section-remove-button" type="submit" aria-label="Remove {{ section.title }}"><i class="fas fa-times"></i></button>
+                </form>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </nav>
+        <p class="gallery-section-hint">Double-click a section name to rename it.</p>
+
+        {% if active_section %}
+          <div class="gallery-photo-toolbar">
+            <form action="{{ url_for('portal_upload_gallery_photos', gallery_id=gallery.id) }}" method="POST" enctype="multipart/form-data" class="gallery-photo-upload-form" data-chunk-upload data-chunk-size="{{ config.MEDIA_UPLOAD_CHUNK_SIZE }}" data-upload-context="gallery_photo" data-media-type="image" data-gallery-id="{{ gallery.id }}" data-section-id="{{ active_section.id }}" data-return-url="{{ url_for('portal_gallery_detail', gallery_id=gallery.id, section=active_section.id, step=2) }}">
+              <input type="hidden" name="section_id" value="{{ active_section.id }}">
+              <label class="gallery-upload-button">
+                <input type="file" name="photos" accept="image/png,image/jpeg,image/webp,image/gif" multiple data-photo-input data-chunk-file-input>
+                <i class="fas fa-plus" aria-hidden="true"></i> Upload files
+              </label>
+              <label class="gallery-upload-button">
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple webkitdirectory directory data-chunk-file-input data-photo-folder-input>
+                <i class="fas fa-folder-open" aria-hidden="true"></i> Choose folder
+              </label>
+              <span class="dropzone-selection" data-photo-selection></span>
+              <button type="submit" class="gallery-upload-submit" data-upload-submit disabled>Upload photos</button>
+              <span class="upload-transfer-status" data-transfer-status aria-live="polite"></span>
+            </form>
+            {% if user.normalized_role == 'administrator' %}
+              <details class="server-media-import" data-media-import data-media-type="image" data-gallery-id="{{ gallery.id }}" data-section-id="{{ active_section.id }}" data-browse-url="{{ url_for('portal_browse_media_import') }}" data-import-url="{{ url_for('portal_import_media') }}" data-return-url="{{ url_for('portal_gallery_detail', gallery_id=gallery.id, section=active_section.id, step=2) }}">
+                <summary class="gallery-small-button">Import from server folder</summary>
+                <div class="server-media-import-content">
+                  {% if config.MEDIA_IMPORT_ROOT %}
+                    <p>Browse images under the server's configured media import folder.</p>
+                    <div class="server-media-import-toolbar">
+                      <button class="gallery-small-button" type="button" data-import-parent hidden>Parent folder</button>
+                      <span data-import-location aria-live="polite"></span>
+                    </div>
+                    <div class="server-media-import-entries" data-import-entries></div>
+                    <button class="gallery-small-button" type="button" data-import-submit disabled>Import selected photos</button>
+                    <p class="upload-transfer-status" data-import-status aria-live="polite"></p>
+                  {% else %}
+                    <p>Set MEDIA_IMPORT_ROOT to a server folder to enable this importer.</p>
+                  {% endif %}
+                </div>
+              </details>
+            {% endif %}
+            <div class="gallery-photo-selection-actions">
+              <span data-selected-count>0 selected</span>
+              <button class="gallery-small-button" type="button" data-select-all> Select all</button>
+              <button class="gallery-delete-selected" type="submit" form="gallery-delete-form" data-delete-selected disabled><i class="fas fa-trash" aria-hidden="true"></i> Delete selected</button>
+            </div>
+          </div>
+
+          <div class="gallery-photo-workspace" data-photo-dropzone>
+            <div class="photo-drop-overlay" data-photo-drop-overlay aria-live="polite">
+              <i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>
+              <strong data-photo-drop-text>Drop images here to add them to {{ active_section.title }}</strong>
+            </div>
+            {% set section_photos = active_section.items|selectattr('media_type', 'equalto', 'image')|list %}
+            {% if section_photos %}
+              <form id="gallery-delete-form" action="{{ url_for('portal_delete_gallery_photos', gallery_id=gallery.id) }}" method="POST" data-confirm-delete data-confirm-message="Delete the selected photos from this gallery? This cannot be undone.">
+                <div class="gallery-photo-grid">
+                  {% for photo in section_photos %}
+                      <div class="gallery-photo-card" data-photo-card role="button" aria-pressed="false" aria-label="Select photo {{ loop.index }}" tabindex="0">
+                        <input type="hidden" name="photo_ids" value="{{ photo.id }}" data-photo-select disabled>
+                        <span class="gallery-photo-preview"><img src="{{ photo.url }}" alt="" loading="lazy" draggable="false"></span>
+                      </div>
+                  {% endfor %}
+                </div>
+              </form>
+            {% else %}
+              <p class="empty-gallery-section">This section is empty. Choose <strong>Upload files</strong> or drag photos into this area.</p>
+            {% endif %}
+          </div>
+        {% else %}
+          <p class="empty-gallery-section">Create a section for a photo category, then upload photos into it.</p>
+        {% endif %}
+      </section>
+
+      <dialog class="gallery-details-dialog" data-gallery-details-dialog aria-labelledby="gallery-details-title">
+        <form action="{{ url_for('portal_update_gallery', gallery_id=gallery.id) }}" method="POST">
+          <input type="hidden" name="return_section" value="{{ active_section.id if active_section else '' }}">
+          <div class="gallery-dialog-heading">
+            <div>
+              <p class="manager-eyebrow">Gallery details</p>
+              <h2 id="gallery-details-title">Edit gallery details</h2>
+            </div>
+            <button class="gallery-dialog-close" type="button" data-close-gallery-details aria-label="Close">&times;</button>
+          </div>
+          <div class="gallery-detail-fields">
+            <label class="wide-field">Title<input class="form-control" name="title" value="{{ gallery.title }}" required maxlength="180"></label>
+            <label>Client name<input class="form-control" name="client" value="{{ gallery.client }}" required maxlength="120"></label>
+            <label>Photographer name<input class="form-control" name="photographer" value="{{ gallery.photographer }}" maxlength="120"></label>
+            <label>Location<input class="form-control" name="location" value="{{ gallery.location }}" required maxlength="150"></label>
+            <label>Year<input class="form-control" name="year" value="{{ gallery.year }}" required maxlength="20"></label>
+          </div>
+          <button type="submit" class="btn-submit-minimal">Save details</button>
+        </form>
+      </dialog>
+
+    {% else %}
+      <section class="gallery-stylize-panel">
+        <div class="gallery-form-intro">
+          <p class="manager-eyebrow">Step 3 of 3</p>
+          <h1>Choose and crop your thumbnail</h1>
+          <p>Adjust the crop separately for desktop, tablet, and mobile screens.</p>
+        </div>
+
+        {% if photos %}
+          {% set selected_photo = photos|selectattr('url', 'equalto', gallery.cover_url)|first %}
+          <form id="gallery-publish-form" action="{{ url_for('portal_publish_gallery', gallery_id=gallery.id) }}" method="POST" class="gallery-stylize-layout">
+            <div class="gallery-thumbnail-picker">
+              <h2>Select a thumbnail</h2>
+              <div class="gallery-thumbnail-grid" role="group" aria-label="Gallery thumbnail images">
+                {% for photo in photos %}
+                  <button class="gallery-thumbnail-option {% if (selected_photo and photo.id == selected_photo.id) or (not selected_photo and loop.first) %}selected{% endif %}" type="button" aria-pressed="{{ 'true' if (selected_photo and photo.id == selected_photo.id) or (not selected_photo and loop.first) else 'false' }}" aria-label="Select thumbnail {{ loop.index }}" data-cover-option data-image-url="{{ photo.url }}" data-photo-id="{{ photo.id }}">
+                    <img src="{{ photo.url }}" alt="" loading="lazy">
+                  </button>
+                {% endfor %}
+              </div>
+              <input type="hidden" name="cover_photo_id" value="{{ selected_photo.id if selected_photo else photos[0].id }}" data-selected-cover-id>
+            </div>
+
+            <div class="gallery-crop-editor">
+              <div class="gallery-crop-preview-wrap">
+                <div class="gallery-crop-preview aspect-desktop" data-crop-preview>
+                  <img src="{{ selected_photo.url if selected_photo else photos[0].url }}" alt="Selected gallery thumbnail preview" data-crop-preview-image draggable="false">
+                </div>
+                <p class="crop-preview-caption" data-crop-preview-caption>Desktop preview</p>
+              </div>
+              <div class="gallery-crop-controls">
+                <div class="crop-form-factor-tabs" role="tablist" aria-label="Screen form factor">
+                  <button type="button" class="active" data-crop-factor="desktop">Desktop</button>
+                  <button type="button" data-crop-factor="tablet">Tablet</button>
+                  <button type="button" data-crop-factor="mobile">Mobile</button>
+                </div>
+                {% for form_factor in ('desktop', 'tablet', 'mobile') %}
+                  <div class="crop-position-controls" data-crop-controls="{{ form_factor }}" {% if form_factor != 'desktop' %}hidden{% endif %}>
+                    <label>Horizontal position
+                      <input type="range" min="0" max="100" step="1" name="cover_position_{{ form_factor }}_x" value="{{ gallery['cover_position_' ~ form_factor ~ '_x'] }}" data-crop-axis="x">
+                    </label>
+                    <label>Vertical position
+                      <input type="range" min="0" max="100" step="1" name="cover_position_{{ form_factor }}_y" value="{{ gallery['cover_position_' ~ form_factor ~ '_y'] }}" data-crop-axis="y">
+                    </label>
+                    <button class="gallery-small-button" type="button" data-reset-crop="{{ form_factor }}">Reset crop</button>
+                  </div>
+                {% endfor %}
+                <p class="crop-help-text">Drag the sliders to position the photo inside the thumbnail frame. The image itself is never changed.</p>
+              </div>
+            </div>
+          </form>
+        {% else %}
+          <div class="gallery-stylize-empty">
+            <i class="fas fa-images" aria-hidden="true"></i>
+            <h2>Upload photos before choosing a thumbnail</h2>
+            <p>Add at least one photo in step 2. You can then select it and adjust its crop for each screen size.</p>
+            <a class="btn-submit-minimal" href="{{ url_for('portal_gallery_detail', gallery_id=gallery.id, step=2) }}">Back to upload &amp; sections</a>
+          </div>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    <dialog class="gallery-details-dialog gallery-published-dialog" data-gallery-published-dialog aria-labelledby="gallery-published-title">
+      <div class="gallery-published-content">
+        <span class="gallery-published-icon" aria-hidden="true"><i class="fas fa-check"></i></span>
+        <p class="manager-eyebrow">Step 3 complete</p>
+        <h2 id="gallery-published-title">Gallery published</h2>
+        <p>{{ gallery.title }} is now live in your galleries.</p>
+        <div class="gallery-published-actions">
+          <a class="btn-submit-minimal" href="{{ url_for('portal_galleries') }}">Head to Galleries</a>
+          <button class="gallery-small-button" type="button" data-close-published-dialog>Return</button>
+        </div>
+      </div>
+    </dialog>
+  </main>
+  <script src="{{ url_for('static', filename='js/gallery-manager.js') }}?v=9"></script>
+  <script src="{{ url_for('static', filename='js/media-transfer.js') }}?v=2"></script>
+</body>
+</html>

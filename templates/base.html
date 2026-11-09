@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}cathea{% endblock %} — Visual Art</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=9">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Navigation Bar (Crisp Contrast, Never Blends) -->
+  <header class="navbar">
+    <a href="{{ url_for('index') }}" class="nav-brand">
+      <span class="brand-logo">cathea</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="{{ url_for('photos') }}" class="nav-link {% if request.endpoint in ['photos', 'story_detail'] %}active{% endif %}">Photos</a></li>
+      <li><a href="{{ url_for('videos') }}" class="nav-link {% if request.endpoint == 'videos' %}active{% endif %}">Cinema</a></li>
+      <li><a href="{{ url_for('contact') }}" class="nav-link {% if request.endpoint == 'contact' %}active{% endif %}">Inquiries</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <a href="https://www.instagram.com/{{ settings.instagram_handle if settings else 'cathea.studio' }}/" target="_blank" class="nav-meta-ig">
+        @cathea.studio
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content Wrapper -->
+  <main class="page-wrapper">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Minimalist Footer -->
+  <footer class="footer-minimal">
+    <div>&copy; cathea &bull; batam &bull; singapore &bull; worldwide</div>
+    <div>
+      <a href="https://www.instagram.com/{{ settings.instagram_handle if settings else 'cathea.studio' }}/" target="_blank">Instagram</a>
+      <span style="margin: 0 0.8rem;">/</span>
+      <a href="https://wa.me/{{ settings.whatsapp_number if settings else '6281234567890' }}" target="_blank">WhatsApp Direct</a>
+    </div>
+  </footer>
+
+  <!-- Tucked "Consult Us" Assistant Button -->
+  <button class="consult-trigger-btn" id="consultTriggerBtn">
+    <span class="consult-dot"></span>
+    <span>Consult Us</span>
+  </button>
+
+  <div class="consult-drawer" id="consultDrawer" data-wa-number="{{ settings.whatsapp_number if settings else '6281234567890' }}">
+    <div class="consult-header">
+      <div class="consult-title-group">
+        <span class="consult-main-title">Consultation</span>
+        <span class="consult-sub-title">cathea atelier</span>
+      </div>
+      <button class="consult-close-btn" id="consultCloseBtn">&times;</button>
+    </div>
+
+    <div class="consult-direct-bar">
+      <span>Studio Director Line</span>
+      <a href="#" target="_blank" class="consult-wa-link" id="consultWaDirect">WhatsApp Direct &rarr;</a>
+    </div>
+
+    <div class="consult-messages" id="consultMessages">
+      <div class="consult-bubble agent">
+        Welcome to cathea. Inquire regarding our wedding, prewedding, or studio sessions in Batam, Singapore, and destinations worldwide.
+      </div>
+    </div>
+
+    <form class="consult-input-form" id="consultForm">
+      <input type="text" id="consultInput" placeholder="Write a message..." autocomplete="off">
+      <button type="submit" class="consult-send-btn">Send</button>
+    </form>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=3"></script>
+  <script src="{{ url_for('static', filename='js/chat-widget.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+
+</body>
+</html>

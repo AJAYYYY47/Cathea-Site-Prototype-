@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Photos Gallery — cathea{% endblock %}
+
+{% block content %}
+<div class="page-title-bar">
+  <h1 class="page-title">Photos Gallery</h1>
+  <span class="page-index">{{ galleries|length }} GALLERIES</span>
+</div>
+
+<!-- ALTERNATING GRID: DYNAMIC CADENCE, ZERO TEXT FLUFF, HOVER TO REVEAL, HIGH-CONTRAST WATERMARKS -->
+<div class="alternating-grid">
+  {% for gallery in galleries %}
+    <div class="alternating-card" onclick="window.location.href='{{ url_for('story_detail', slug=gallery.slug) }}'">
+      <img class="gallery-cover-image" src="{{ gallery.cover_url }}" alt="{{ gallery.title }}" loading="lazy"
+           style="--crop-desktop: {{ gallery.cover_position_desktop_x }}% {{ gallery.cover_position_desktop_y }}%; --crop-tablet: {{ gallery.cover_position_tablet_x }}% {{ gallery.cover_position_tablet_y }}%; --crop-mobile: {{ gallery.cover_position_mobile_x }}% {{ gallery.cover_position_mobile_y }}%;">
+      
+      <!-- Top Right: Small cathea watermark -->
+      <div class="photo-tag-top-right">cathea</div>
+      
+      <!-- Hover Overlay -->
+      <div class="square-overlay">
+        <div class="square-title">{{ gallery.title }}</div>
+        <div class="square-meta">by {{ gallery.photographer or 'Cathea Studio' }} &bull; {{ gallery.year }}</div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

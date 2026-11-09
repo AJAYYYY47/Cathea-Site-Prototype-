@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commissions — Cathea Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/portal.css') }}?v=19">
+</head>
+<body class="portal-body portal-light-workspace">
+  {% set active_portal_page = 'commissions' %}
+  {% include 'portal_sidebar.html' %}
+  <main class="portal-main">
+    <div class="portal-topbar">
+      <div><h1>Commissions</h1><p>Event rates, work commissions, and employee adjustments.</p></div>
+    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for category, message in messages %}<p class="manager-flash {{ category }}">{{ message }}</p>{% endfor %}{% endif %}
+    {% endwith %}
+    <div class="stats-grid commission-stats">
+      <div class="stat-card"><div class="label">Net earned</div><div class="number">Rp {{ '{:,.0f}'.format(earned) }}</div></div>
+      <div class="stat-card"><div class="label">Unpaid completed work and events</div><div class="number">Rp {{ '{:,.0f}'.format(unpaid) }}</div></div>
+      <div class="stat-card"><div class="label">Manual adjustments</div><div class="number">Rp {{ '{:,.0f}'.format(adjustment_total) }}</div></div>
+    </div>
+
+    <section class="dashboard-panel commission-section">
+      <div class="dashboard-panel-header"><h2>Employee commission totals</h2><p>Includes completed assignment and event commissions, plus manual adjustments.</p></div>
+      <div class="commission-list">
+        {% for employee in employees %}
+          <article class="commission-row commission-summary-row">
+            <div class="commission-assignment">
+              <strong>{{ employee.full_name or employee.username }}</strong>
+              <span>Current net earned</span>
+            </div>
+            <strong class="commission-total">Rp {{ '{:,.0f}'.format(employee_totals.get(employee.id, 0)) }}</strong>
+          </article>
+        {% else %}
+          <p class="empty-gallery-section">No active employee accounts.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if user.normalized_role == 'administrator' %}
+      <section class="dashboard-panel commission-section">
+        <div class="dashboard-panel-header"><h2>Event commission rates</h2><p>Set each employee’s Rp rate for each event type. Changes apply to events created after the rate is saved.</p></div>
+        <div class="commission-list">
+          {% for employee in employees %}
+            <article class="commission-rate-card">
+              <h3>{{ employee.full_name or employee.username }}</h3>
+              <form action="{{ url_for('portal_update_employee_commission_rates', user_id=employee.id) }}" method="POST" class="commission-rate-form">
+                {% for event_type in event_types %}
+                  {% set rate_index = loop.index0 %}
+                  <label>{{ event_type }} (Rp)
+                    <input class="form-control" type="number" min="0" step="1000" name="rate_{{ rate_index }}" value="{{ rate_map.get((employee.id, event_type), 0)|int }}" required>
+                  </label>
+                {% endfor %}
+                <button class="gallery-small-button" type="submit">Save rates</button>
+              </form>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    <section class="dashboard-panel commission-section">
+      <div class="dashboard-panel-header"><h2>Event commission ledger</h2><p>Employee rates are recorded when an event is created; event commissions count as earned on the event date.</p></div>
+      <div class="commission-list">
+        {% for entry in event_commissions %}
+          <article class="commission-row">
+            <div class="commission-assignment">
+              <strong>{{ entry.event.title }} · {{ entry.event.event_type }}</strong>
+              <span>{{ entry.employee.full_name or entry.employee.username }} · {{ (entry.event.event_date or entry.event.starts_at.date()).strftime('%b %d, %Y') }}</span>
+            </div>
+            <div class="commission-ledger-action">
+              <strong>Rp {{ '{:,.0f}'.format(entry.amount) }}</strong>
+              {% if user.normalized_role == 'administrator' %}
+                <form action="{{ url_for('portal_update_event_commission', commission_id=entry.id) }}" method="POST">
+                  <label class="commission-paid-control"><input type="checkbox" name="paid" {% if entry.paid %}checked{% endif %}> Paid</label>
+                  <button class="gallery-small-button" type="submit">Save</button>
+                </form>
+              {% else %}
+                <span>{{ 'Paid' if entry.paid else 'Unpaid' }}</span>
+              {% endif %}
+            </div>
+          </article>
+        {% else %}
+          <p class="empty-gallery-section">Event commissions appear here when an event is scheduled.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if user.normalized_role == 'administrator' %}
+      <section class="dashboard-panel commission-section">
+        <div class="dashboard-panel-header"><h2>Add or deduct fees</h2><p>Record a one-time addition or deduction in Rp for an employee.</p></div>
+        <form action="{{ url_for('portal_create_commission_adjustment') }}" method="POST" class="commission-adjustment-form">
+          <label>Employee
+            <select class="form-control" name="employee_id" required>
+              {% for employee in employees %}<option value="{{ employee.id }}">{{ employee.full_name or employee.username }}</option>{% endfor %}
+            </select>
+          </label>
+          <label>Adjustment
+            <select class="form-control" name="adjustment_type" required>
+              <option value="addition">Add</option>
+              <option value="deduction">Deduct</option>
+            </select>
+          </label>
+          <label>Amount (Rp)<input class="form-control" type="number" min="1" step="1000" name="amount" required></label>
+          <label>Reason / fee<input class="form-control" name="note" maxlength="240" required></label>
+          <button class="gallery-small-button" type="submit">Add adjustment</button>
+        </form>
+      </section>
+    {% endif %}
+
+    <section class="dashboard-panel commission-section">
+      <div class="dashboard-panel-header"><h2>Adjustment ledger</h2><p>All manual additions and deductions.</p></div>
+      <div class="commission-list">
+        {% for adjustment in adjustments %}
+          <article class="commission-row">
+            <div class="commission-assignment">
+              <strong>{{ adjustment.note }}</strong>
+              <span>{{ adjustment.employee.full_name or adjustment.employee.username }} · {{ adjustment.created_at.strftime('%b %d, %Y') }} · {{ adjustment.adjustment_type|capitalize }}</span>
+            </div>
+            <strong class="commission-total">{{ '+' if adjustment.adjustment_type == 'addition' else '−' }} Rp {{ '{:,.0f}'.format(adjustment.amount) }}</strong>
+          </article>
+        {% else %}
+          <p class="empty-gallery-section">No manual adjustments have been added.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="dashboard-panel commission-section">
+      <div class="dashboard-panel-header"><h2>Assignment commission ledger</h2><p>Amounts are included in earned totals once an assignment is marked Done.</p></div>
+      <div class="commission-list">
+        {% for assignment in assignments %}
+          <article class="commission-row">
+            <div class="commission-assignment">
+              <strong>{{ assignment.title }}</strong>
+              <span>{{ assignment.assigned_to.full_name or assignment.assigned_to.username }} · {{ assignment.scheduled_for.strftime('%b %d, %Y') if assignment.scheduled_for else 'No calendar date' }} · {{ assignment.status }}</span>
+            </div>
+            <form action="{{ url_for('portal_update_commission', assignment_id=assignment.id) }}" method="POST" class="commission-edit-form">
+              <label>Amount (Rp)<input class="form-control" type="number" min="0" step="1000" name="commission_amount" value="{{ assignment.commission_amount|int }}" required></label>
+              <label class="commission-paid-control"><input type="checkbox" name="commission_paid" {% if assignment.commission_paid %}checked{% endif %} {% if assignment.status != 'Done' %}disabled title="Complete the assignment before marking it paid"{% endif %}> Paid</label>
+              <button class="gallery-small-button" type="submit">Save</button>
+            </form>
+          </article>
+        {% else %}
+          <p class="empty-gallery-section">Commissions appear here when work assignments are created.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+</body>
+</html>
