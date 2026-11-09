@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ gallery.title }} — cathea{% endblock %}
+
+{% block content %}
+<section class="story-header-minimal">
+  <div class="story-header-copy">
+    <h1>{{ gallery.title }}</h1>
+    <div class="sub">by {{ gallery.photographer or 'Cathea Studio' }} &bull; {{ gallery.year }} &bull; {{ gallery.location }}</div>
+  </div>
+  <div class="story-header-action">
+    <a href="{{ url_for('photos') }}">
+      &larr; All Photos
+    </a>
+  </div>
+</section>
+
+{% for section in gallery.sections %}
+  {% set section_photos = section.items|selectattr('media_type', 'equalto', 'image')|list %}
+  {% if section_photos %}
+    <section class="story-gallery-section">
+      {% if gallery.sections|length > 1 or section.title != 'Session 1' %}
+        <h2 class="story-gallery-section-title">{{ section.title }}</h2>
+      {% endif %}
+      <div class="alternating-grid story-detail-grid">
+        {% for item in section_photos %}
+          <div class="alternating-card story-image-card square-card" data-src="{{ item.url }}">
+            <img src="{{ item.thumbnail_url or item.url }}" alt="{{ item.title }}" loading="lazy">
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+{% endfor %}
+
+<!-- Fullscreen Lightbox Modal -->
+<div class="lightbox-modal" id="lightboxModal">
+  <button class="lightbox-close-btn" id="lightboxClose">&times;</button>
+  <div class="lightbox-inner-box">
+    <img id="lightboxImg" src="" alt="Enlarged Frame">
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/gallery.js') }}"></script>
+{% endblock %}

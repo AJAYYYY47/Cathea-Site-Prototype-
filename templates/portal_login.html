@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Access</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  
+  <style>
+    body {
+      background: #f7f7f7;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .auth-box {
+      width: 100%;
+      max-width: 380px;
+      background: #ffffff;
+      border: 1px solid #111111;
+      padding: 3rem 2.5rem;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.06);
+    }
+    .auth-title {
+      font-family: var(--font-logo);
+      font-size: 1.5rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.5rem;
+      font-weight: 400;
+    }
+    .auth-sub {
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #737373;
+      margin-bottom: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-box">
+    <h1 class="auth-title">cathea</h1>
+    <div class="auth-sub">Cathea Team Portal Access</div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="margin-bottom: 1.5rem;">
+          {% for category, message in messages %}
+            <div style="padding: 0.7rem; font-size: 0.8rem; border: 1px solid #000; background: #000; color: #fff; margin-bottom: 0.5rem;">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('portal_login') }}" style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <div class="form-field">
+        <label>Username</label>
+        <input type="text" name="username" class="form-input" required autocomplete="username">
+      </div>
+
+      <div class="form-field">
+        <label>Password</label>
+        <input type="password" name="password" class="form-input" required autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="btn-submit-minimal" style="width: 100%; text-align: center; margin-top: 1rem;">
+        Authenticate &rarr;
+      </button>
+    </form>
+  </div>
+
+</body>
+</html>

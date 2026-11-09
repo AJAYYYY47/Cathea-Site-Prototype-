@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Cinema — cathea{% endblock %}
+
+{% block content %}
+<div class="page-title-bar">
+  <h1 class="page-title">Cinema</h1>
+  <span class="page-index">{{ videos|length }} FILMS</span>
+</div>
+
+<!-- ALTERNATING CINEMA GRID: ASYMMETRIC CADENCE, TOP-RIGHT & BOTTOM-RIGHT WATERMARKS, CLICK TO PLAY -->
+<div class="cinema-alternating-grid">
+  {% for video in videos %}
+    <div class="cinema-card video-frame-card" data-video-url="{{ video.url }}">
+      <img src="{{ video.thumbnail_url }}" alt="{{ video.title }}" loading="lazy">
+      
+      <!-- Top Right: Small cathea watermark -->
+      <div class="photo-tag-top-right">cathea</div>
+      
+      <!-- Play Button -->
+      <div class="video-play-indicator">
+        <i class="fas fa-play" style="font-size: 0.8rem; margin-left: 2px;"></i>
+      </div>
+
+      <!-- Hover Overlay -->
+      <div class="square-overlay">
+        <div class="square-title">{{ video.title }}</div>
+        <div class="square-meta">by {{ video.photographer or 'Cathea Studio' }}</div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- Video Player Modal -->
+<div class="video-modal" id="videoModal">
+  <div class="video-modal-inner">
+    <button class="video-modal-close-btn" id="videoModalClose">&times;</button>
+    <div id="videoPlayerContainer" style="width: 100%; height: 100%;"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/gallery.js') }}"></script>
+{% endblock %}

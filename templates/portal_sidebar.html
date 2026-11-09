@@ -1,0 +1,58 @@
+<aside class="portal-sidebar">
+  <div class="portal-sidebar-header">
+    <a class="portal-logo" href="{{ url_for('portal_dashboard') if user.normalized_role != 'employee' else url_for('portal_employee_space') }}">cathea</a>
+    <div class="portal-sidebar-caption">{{ 'Employee Space' if user.normalized_role == 'employee' else 'Management Space' }}</div>
+  </div>
+  <nav class="portal-nav" aria-label="Portal navigation">
+    <a class="portal-tab-btn {% if active_portal_page == 'employee' %}active{% endif %}" href="{{ url_for('portal_employee_space') }}">
+      <i class="fas fa-calendar-check"></i><span>Employee Space</span>
+    </a>
+    {% if user.normalized_role == 'employee' %}
+      <a class="portal-tab-btn {% if active_portal_page == 'commissions' %}active{% endif %}" href="{{ url_for('portal_commissions') }}">
+        <i class="fas fa-coins"></i><span>My Commissions</span>
+      </a>
+    {% endif %}
+    {% if user.normalized_role != 'employee' %}
+      <a class="portal-tab-btn {% if active_portal_page == 'overview' %}active{% endif %}" href="{{ url_for('portal_dashboard') }}">
+        <i class="fas fa-chart-pie"></i><span>Overview</span>
+      </a>
+      <a class="portal-tab-btn {% if active_portal_page == 'galleries' %}active{% endif %}" href="{{ url_for('portal_galleries') }}">
+        <i class="fas fa-images"></i><span>Galleries</span>
+      </a>
+      <a class="portal-tab-btn {% if active_portal_page == 'videos' %}active{% endif %}" href="{{ url_for('portal_dashboard', tab='tabMedia') }}">
+        <i class="fas fa-photo-film"></i><span>Videos</span>
+      </a>
+      <a class="portal-tab-btn {% if active_portal_page == 'homepage' %}active{% endif %}" href="{{ url_for('portal_dashboard', tab='tabHomepage') }}">
+        <i class="fas fa-house"></i><span>Homepage</span>
+      </a>
+      <a class="portal-tab-btn {% if active_portal_page == 'inquiries' %}active{% endif %}" href="{{ url_for('portal_dashboard', tab='tabInquiries') }}">
+        <i class="fas fa-inbox"></i><span>Inquiries{% if inquiries is defined %} ({{ inquiries|length }}){% endif %}</span>
+      </a>
+      <a class="portal-tab-btn {% if active_portal_page == 'settings' %}active{% endif %}" href="{{ url_for('portal_dashboard', tab='tabCustomization') }}">
+        <i class="fas fa-sliders"></i><span>Settings &amp; AI</span>
+      </a>
+      <a class="portal-tab-btn {% if active_portal_page == 'password' %}active{% endif %}" href="{{ url_for('portal_dashboard', tab='tabSecurity') }}">
+        <i class="fas fa-shield-alt"></i><span>Password</span>
+      </a>
+      <a class="portal-tab-btn {% if active_portal_page == 'commissions' %}active{% endif %}" href="{{ url_for('portal_commissions') }}">
+        <i class="fas fa-coins"></i><span>Commissions</span>
+      </a>
+      {% if user.normalized_role == 'administrator' %}
+        <a class="portal-tab-btn {% if active_portal_page == 'accounts' %}active{% endif %}" href="{{ url_for('portal_accounts') }}">
+          <i class="fas fa-user-shield"></i><span>Accounts &amp; Activity</span>
+        </a>
+      {% endif %}
+    {% endif %}
+  </nav>
+  <div class="portal-sidebar-footer">
+    <div class="user-profile-widget">
+      <div class="user-info-text">
+        <div class="name">{{ user.full_name or user.username }}</div>
+        <div class="role">{{ user.role }}</div>
+      </div>
+      <a href="{{ url_for('portal_logout') }}" aria-label="Sign out" title="Sign out">
+        <i class="fas fa-sign-out-alt"></i>
+      </a>
+    </div>
+  </div>
+</aside>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galleries — Cathea Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/portal.css') }}?v=12">
+</head>
+<body class="portal-body gallery-manager-body">
+  {% set active_portal_page = 'galleries' %}
+  {% include 'portal_sidebar.html' %}
+
+  <main class="portal-main gallery-manager-main">
+    <div class="portal-topbar gallery-manager-page-header">
+      <div>
+        <h2>Galleries</h2>
+        <p>Studio Portfolio Management</p>
+      </div>
+      <span>{{ galleries|length }} galleries</span>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="manager-flashes">
+          {% for category, message in messages %}
+            <p class="manager-flash {{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="managed-gallery-grid">
+      <a class="create-gallery-card" href="{{ url_for('portal_create_gallery') }}">
+        <span aria-hidden="true">+</span>
+        <small>Create a gallery</small>
+      </a>
+
+      {% for gallery in galleries %}
+        {% set photo_count = gallery.items|selectattr('media_type', 'equalto', 'image')|list|length %}
+        <article class="managed-gallery-card">
+          <a class="managed-gallery-cover" href="{{ url_for('portal_gallery_detail', gallery_id=gallery.id) }}">
+            {% if gallery.cover_url %}
+              <img class="gallery-cover-image"
+                   src="{{ gallery.cover_url }}" alt="{{ gallery.title }}" loading="lazy"
+                   style="--crop-desktop: {{ gallery.cover_position_desktop_x }}% {{ gallery.cover_position_desktop_y }}%; --crop-tablet: {{ gallery.cover_position_tablet_x }}% {{ gallery.cover_position_tablet_y }}%; --crop-mobile: {{ gallery.cover_position_mobile_x }}% {{ gallery.cover_position_mobile_y }}%;">
+            {% else %}
+              <span class="managed-gallery-cover-placeholder">Thumbnail selected in step 3</span>
+            {% endif %}
+            <span class="managed-gallery-photo-count">{{ photo_count }} photos</span>
+            <span class="managed-gallery-status">
+              {% if not gallery.is_active %}Draft{% elif gallery.is_listed %}Published{% else %}Hidden{% endif %}
+            </span>
+            <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+          </a>
+          <div class="managed-gallery-meta">
+            <a href="{{ url_for('portal_gallery_detail', gallery_id=gallery.id) }}">
+              <h2>{{ gallery.title }}</h2>
+              <p>{{ gallery.client or 'No client set' }} · {{ gallery.year }} · {{ gallery.sections|length }} sections</p>
+            </a>
+            {% if gallery.is_active and gallery.cover_url %}
+              <form action="{{ url_for('portal_set_gallery_visibility', gallery_id=gallery.id) }}" method="POST">
+                <input type="hidden" name="action" value="{{ 'hide' if gallery.is_listed else 'show' }}">
+                <button class="gallery-small-button" type="submit">
+                  {{ 'Hide gallery' if gallery.is_listed else 'Show gallery' }}
+                </button>
+              </form>
+            {% endif %}
+            <form action="{{ url_for('portal_delete_gallery', gallery_id=gallery.id) }}" method="POST" onsubmit="return confirm('Delete this gallery and all of its photos?');">
+              <button type="submit" aria-label="Delete {{ gallery.title }}"><i class="fas fa-trash"></i></button>
+            </form>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </main>
+  <script src="{{ url_for('static', filename='js/gallery-manager.js') }}?v=4"></script>
+</body>
+</html>
