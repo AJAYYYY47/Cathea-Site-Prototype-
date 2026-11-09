@@ -25,7 +25,7 @@
       <div class="alternating-grid story-detail-grid">
         {% for item in section_photos %}
           <div class="alternating-card story-image-card square-card" data-src="{{ item.url }}">
-            <img src="{{ item.url }}" alt="{{ item.title }}" loading="lazy">
+            <img src="{{ item.thumbnail_url or item.url }}" alt="{{ item.title }}" loading="lazy">
           </div>
         {% endfor %}
       </div>
