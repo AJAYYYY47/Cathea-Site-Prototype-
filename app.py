@@ -10,7 +10,6 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 from pathlib import Path
-from PIL import Image, UnidentifiedImageError
 from sqlalchemy import func
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 from cryptography.fernet import Fernet, InvalidToken
@@ -140,71 +139,6 @@ def allowed_media_file(filename, media_type):
     image_extensions = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
     video_extensions = {'mp4', 'mov', 'webm'}
     return extension in (image_extensions if media_type == 'image' else video_extensions)
-
-
-def generate_image_thumbnail_url(url):
-    source_url = (url or '').strip()
-    if not source_url:
-        return ''
-
-    parsed_source = urlparse(source_url)
-    source_path = parsed_source.path or ''
-    if source_path.startswith('/uploads/'):
-        filename = os.path.basename(source_path)
-        if not filename:
-            return source_url
-        if filename.lower().startswith('thumb_'):
-            return source_url
-
-        upload_source_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        if not os.path.isfile(upload_source_path):
-            return source_url
-
-        stem = Path(filename).stem
-        thumb_filename = f'thumb_{stem}.jpg'
-        thumb_disk_path = os.path.join(app.config['UPLOAD_FOLDER'], thumb_filename)
-        thumb_url = f'/uploads/{thumb_filename}'
-
-        if not os.path.isfile(thumb_disk_path):
-            try:
-                with Image.open(upload_source_path) as image:
-                    if getattr(image, 'is_animated', False):
-                        image.seek(0)
-                    if image.mode not in ('RGB', 'L'):
-                        image = image.convert('RGB')
-                    image.thumbnail(
-                        (640, 640),
-                        getattr(Image, 'Resampling', Image).LANCZOS
-                    )
-                    image.save(thumb_disk_path, format='JPEG', quality=82, optimize=True)
-            except (OSError, ValueError, UnidentifiedImageError):
-                app.logger.warning('Unable to generate thumbnail for uploaded image: %s', source_url)
-                return source_url
-        return thumb_url
-
-    host = (parsed_source.hostname or '').lower()
-    if host.endswith('images.unsplash.com'):
-        query_params = parse_qs(parsed_source.query, keep_blank_values=True)
-        query_params['auto'] = ['format']
-        query_params['fit'] = ['crop']
-        query_params['w'] = ['640']
-        query_params['h'] = ['640']
-        query_params['q'] = ['75']
-        return urlunparse(parsed_source._replace(query=urlencode(query_params, doseq=True)))
-    return source_url
-
-
-def ensure_gallery_image_thumbnails(gallery):
-    updated = False
-    for item in gallery.items:
-        if item.media_type != 'image':
-            continue
-        thumbnail_url = generate_image_thumbnail_url(item.url)
-        if thumbnail_url and item.thumbnail_url != thumbnail_url:
-            item.thumbnail_url = thumbnail_url[:600]
-            updated = True
-    if updated:
-        db.session.commit()
 
 
 def media_upload_stage_path(upload_id):
@@ -730,7 +664,7 @@ def portal_complete_media_upload(upload_id):
                 media_type='image',
                 title=title[:180],
                 url=media_url,
-                thumbnail_url=generate_image_thumbnail_url(media_url)
+                thumbnail_url=media_url
             )
         elif metadata['context'] == 'video_library':
             fallback_gallery = Gallery.query.order_by(Gallery.sort_order.asc()).first()
@@ -888,7 +822,7 @@ def portal_import_media():
                     media_type='image',
                     title=(os.path.splitext(source.name)[0].replace('_', ' ') or 'Untitled photo')[:180],
                     url=media_url,
-                    thumbnail_url=generate_image_thumbnail_url(media_url)
+                    thumbnail_url=media_url
                 ))
             else:
                 items.append(MediaItem(
@@ -990,7 +924,6 @@ def photos():
 def story_detail(slug):
     # Full collection of photos for a clicked gallery
     gallery = Gallery.query.filter_by(slug=slug, is_active=True).first_or_404()
-    ensure_gallery_image_thumbnails(gallery)
     return render_template('story_detail.html', gallery=gallery)
 
 
@@ -2276,7 +2209,7 @@ def portal_upload_gallery_photos(gallery_id):
             media_type='image',
             title=name.replace('_', ' ') or 'Untitled photo',
             url=url,
-            thumbnail_url=generate_image_thumbnail_url(url)
+            thumbnail_url=url
         ))
     db.session.commit()
     flash(f'{len(files)} photo(s) added to {section.title}.', 'success')
@@ -2411,7 +2344,6 @@ def portal_update_media(item_id):
             flash('Choose a valid section for this photo.', 'danger')
             return redirect(url_for('portal_gallery_detail', gallery_id=item.gallery_id))
         item.section_id = section.id
-        item.thumbnail_url = generate_image_thumbnail_url(url)
     else:
         item.photographer = request.form.get('photographer', '').strip() or 'Cathea Studio'
         item.duration = request.form.get('duration', '').strip()
